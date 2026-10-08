@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WillianEduca</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif}
+        :root{--primario:#6366f1;--secundario:#8b5cf6;--sucesso:#10b981;--erro:#ef4444;--fundo:#0f172a;--texto:#f1f5f9;--card:#1e293b}
+        body{background:var(--fundo);color:var(--texto);min-height:100vh}
+        .escondido{display:none!important}
+        .container{max-width:1200px;margin:0 auto;padding:20px}
+        .card{background:var(--card);border-radius:16px;padding:24px;margin-bottom:20px;box-shadow:0 4px 20px rgba(0,0,0,.3)}
+        button{background:linear-gradient(135deg,var(--primario),var(--secundario));color:white;border:none;padding:12px 24px;border-radius:10px;cursor:pointer;font-weight:600;transition:transform .2s}
+        button:hover{transform:translateY(-2px)}
+        button:disabled{opacity:.5;cursor:not-allowed;transform:none}
+        input,select,textarea{width:100%;padding:12px;margin:8px 0;background:#334155;border:2px solid transparent;border-radius:8px;color:white;font-size:16px}
+        input:focus,select:focus,textarea:focus{border-color:var(--primario);outline:none}
+        .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px}
+        .navegacao{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:20px}
+        .navegacao button{background:transparent;border:2px solid var(--primario)}
+        .navegacao button.ativo{background:linear-gradient(135deg,var(--primario),var(--secundario))}
+        .alternativa{padding:14px;margin:8px 0;background:#334155;border-radius:10px;cursor:pointer;border:3px solid transparent;transition:all .2s}
+        .alternativa:hover{border-color:var(--primario)}
+        .alternativa.correta{background:#065f46;border-color:var(--sucesso)}
+        .alternativa.errada{background:#991b1b;border-color:var(--erro)}
+        .alternativa.selecionada{border-color:#fbbf24}
+        .status{display:flex;gap:20px;margin:10px 0}
+        .acerto{color:var(--sucesso);font-weight:bold}
+        .erro{color:var(--erro);font-weight:bold}
+        .chat-mensagem{padding:12px;margin:8px 0;border-radius:12px;max-width:85%}
+        .usuario{background:var(--primario);margin-left:auto}
+        .bot{background:#475569;margin-right:auto}
+        .toast{position:fixed;bottom:20px;right:20px;padding:16px 24px;border-radius:10px;color:white;font-weight:bold;z-index:9999;animation:aparecer .3s}
+        @keyframes aparecer{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+        .cabecalho{text-align:center;margin-bottom:30px}
+        .cabecalho h1{font-size:2.5rem;background:linear-gradient(135deg,var(--primario),var(--secundario));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        .login-tela{display:flex;align-items:center;justify-content:center;min-height:100vh}
+        .ranking-item{display:flex;justify-content:space-between;align-items:center;padding:12px;border-bottom:1px solid #475569}
+        .ouro{background:linear-gradient(90deg,#b8860b44,transparent)}
+        .prata{background:linear-gradient(90deg,#c0c0c044,transparent)}
+        .bronze{background:linear-gradient(90deg,#cd7f3244,transparent)}
+        .label-correto{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;background:var(--sucesso);border-radius:20px;font-size:14px;margin-top:6px}
+        .linha-alternativa{display:flex;align-items:center;gap:10px;margin:8px 0}
+        .linha-alternativa input[type="radio"]{width:auto;margin:0}
+        .linha-alternativa input[type="text"]{flex:1;margin:0}
+    </style>
+</head>
+<body>
+
+<!-- TELA DE LOGIN -->
+<div id="tela-login" class="login-tela">
+    <div class="card" style="width:100%;max-width:420px">
+        <div class="cabecalho">
+            <h1>WillianEduca</h1>
+            <p>Aprendizado Inteligente 📚✨</p>
+        </div>
+        <div id="form-login">
+            <input type="text" id="usuario-login" placeholder="Nome de usuário">
+            <input type="password" id="senha-login" placeholder="Senha">
+            <button onclick="fazerLogin()" style="width:100%;margin-top:10px">Entrar</button>
+            <p style="text-align:center;margin:15px 0">ou</p>
+            <button onclick="mostrarCadastro()" style="width:100%;background:transparent;border:2px solid var(--secundario)">Criar conta</button>
+        </div>
+        <div id="form-cadastro" class="escondido">
+            <input type="text" id="usuario-cadastro" placeholder="Nome de usuário">
+            <input type="email" id="email-cadastro" placeholder="E-mail">
+            <input type="password" id="senha-cadastro" placeholder="Senha">
+            <button onclick="fazerCadastro()" style="width:100%;margin-top:10px">Cadastrar</button>
+            <p style="text-align:center;margin:15px 0"><a href="#" onclick="mostrarLogin();return false" style="color:var(--primario)">Já tenho conta</a></p>
+        </div>
+    </div>
+</div>
+
+<!-- TELA PRINCIPAL -->
+<div id="tela-principal" class="escondido">
+    <div class="cabecalho">
+        <h1>WillianEduca</h1>
+        <p id="saudacao">Bem-vindo! | XP: <span id="xp-usuario">0</span> | Nível: <span id="nivel-usuario">1</span></p>
+        <button onclick="sair()" style="position:absolute;top:20px;right:20px;background:transparent;border:2px solid var(--erro)">Sair</button>
+    </div>
+
+    <div class="navegacao container">
+        <button class="aba-ativo" onclick="mostrarAba('flashcards')">📝 Flashcards</button>
+        <button onclick="mostrarAba('gerador')">🤖 Gerador de Questões</button>
+        <button onclick="mostrarAba('chat')">💬 Assistente IA</button>
+        <button onclick="mostrarAba('ranking')">🏆 Ranking</button>
+        <button onclick="mostrarAba('pomodoro')">⏱️ Pomodoro</button>
+        <button onclick="mostrarAba('configuracoes')">⚙️ Configurações</button>
+    </div>
+
+    <div class="container">
+        <!-- FLASHCARDS -->
+        <div id="aba-flashcards" class="aba">
+            <div class="card">
+                <h2>📝 Flashcards — Múltipla Escolha</h2>
+                <select id="materia-flash" onchange="atualizarListaFlashcards()">
+                    <option value="">Todas as matérias</option>
+                    <option value="Português">Português</option>
+                    <option value="Matemática">Matemática</option>
+                    <option value="Inglês">Inglês</option>
+                    <option value="Espanhol">Espanhol</option>
+                    <option value="Física">Física</option>
+                    <option value="Química">Química</option>
+                    <option value="Biologia">Biologia</option>
+                    <option value="História">História</option>
+                    <option value="Geografia">Geografia</option>
+                    <option value="Filosofia">Filosofia</option>
+                    <option value="Sociologia">Sociologia</option>
+                    <option value="Artes">Artes</option>
+                    <option value="Literatura">Literatura</option>
+                    <option value="Redação">Redação</option>
+                    <option value="Alemão">Alemão</option>
+                    <option value="Francês">Francês</option>
+                    <option value="Italiano">Italiano</option>
+                    <option value="Japonês">Japonês</option>
+                    <option value="Russo">Russo</option>
+                    <option value="Chinês">Chinês</option>
+                    <option value="Programação">Programação</option>
+                    <option value="Lógica">Lógica</option>
+                    <option value="Ética">Ética</option>
+                    <option value="Outros">Outros</option>
+                </select>
+                <button onclick="abrirModalCartao()" style="margin:10px 0">➕ Nova Questão</button>
+                <button onclick="iniciarRevisao()" style="margin:10px 0;background:var(--sucesso)">▶️ Iniciar Revisão</button>
+            </div>
+
+            <!-- Revisão -->
+            <div id="area-revisao" class="card escondido">
+                <div class="status">
+                    <span class="acerto">✅ Acertos: <span id="cont-acertos">0</span></span>
+                    <span class="erro">❌ Erros: <span id="cont-erros">0</span></span>
+                </div>
+                <h3 id="pergunta-revisao" style="font-size:1.3rem;margin:20px 0"></h3>
+                <div id="alternativas-revisao"></div>
+                <button id="btn-proxima" onclick="proximaQuestao()" class="escondido" style="margin-top:20px">Próxima Questão →</button>
+                <button onclick="pararRevisao()" style="margin-top:20px;background:transparent;border:2px solid var(--erro)">Encerrar</button>
+            </div>
+
+            <!-- Resumo -->
+            <div id="resumo-revisao" class="card escondido">
+                <h3>🏁 Revisão Concluída!</h3>
+                <p>Acertos: <span id="r-acertos">0</span></p>
+                <p>Erros: <span id="r-erros">0</span></p>
+                <p>Aproveitamento: <span id="r-porcentagem">0</span>%</p>
+                <button onclick="fecharResumo()">OK</button>
+            </div>
+
+            <!-- Lista -->
+            <div class="card">
+                <h3>📋 Questões Cadastradas</h3>
+                <div id="lista-flashcards"></div>
+            </div>
+        </div>
+
+        <!-- GERADOR DE QUESTÕES -->
+        <div id="aba-gerador" class="aba escondido">
+            <div class="card">
+                <h2>🤖 Gerador de Questões</h2>
+                <label>Matéria:</label>
+                <select id="materia-gerador">
+                    <option value="">Selecione uma matéria</option>
+                    <option value="Português">Português</option>
+                    <option value="Matemática">Matemática</option>
+                    <option value="Inglês">Inglês</option>
+                    <option value="Espanhol">Espanhol</option>
+                    <option value="Física">Física</option>
+                    <option value="Química">Química</option>
+                    <option value="Biologia">Biologia</option>
+                    <option value="História">História</option>
+                    <option value="Geografia">Geografia</option>
+                    <option value="Filosofia">Filosofia</option>
+                    <option value="Sociologia">Sociologia</option>
+                    <option value="Artes">Artes</option>
+                    <option value="Literatura">Literatura</option>
+                    <option value="Redação">Redação</option>
+                    <option value="Alemão">Alemão</option>
+                    <option value="Francês">Francês</option>
+                    <option value="Italiano">Italiano</option>
+                    <option value="Japonês">Japonês</option>
+                    <option value="Russo">Russo</option>
+                    <option value="Chinês">Chinês</option>
+                    <option value="Programação">Programação</option>
+                    <option value="Lógica">Lógica</option>
+                    <option value="Ética">Ética</option>
+                    <option value="Outros">Outros</option>
+                </select>
+                <label>Tema/Assunto:</label>
+                <input type="text" id="tema-gerador" placeholder="Ex: Regra de três, Revolução Francesa...">
+                <button onclick="gerarQuestao()" id="btn-gerar">Gerar Questão ✨</button>
+                <div id="carregando-gerador" class="escondido" style="margin:15px 0">Gerando... ⏳</div>
+            </div>
+            <div id="resultado-gerador" class="card escondido">
+                <h3>📝 Questão Gerada</h3>
+                <p id="q-materia"><strong>Matéria:</strong> </p>
+                <p id="q-pergunta" style="font-size:1.1rem;margin:15px 0"></p>
+                <div id="q-alts"></div>
+                <button onclick="salvarQuestaoGerada()" style="margin-top:15px">💾 Salvar nos Flashcards</button>
+            </div>
+        </div>
+
+        <!-- CHAT IA -->
+        <div id="aba-chat" class="aba escondido">
+            <div class="card">
+                <h2>💬 Assistente IA — Gemini</h2>
+                <p style="color:#94a3b8;font-size:14px">Modelo: gemini-1.5-flash (compatível com chave API)</p>
+                <div id="caixa-chat" style="height:400px;overflow-y:auto;padding:10px;background:#0f172a;border-radius:10px;margin-bottom:15px"></div>
+                <input type="password" id="chave-gemini" placeholder="Cole sua chave API do Gemini aqui">
+                <button onclick="salvarChave()" style="margin:5px 0">Salvar Chave 🔑</button>
+                <div style="display:flex;gap:10px;margin-top:10px">
+                    <input type="text" id="mensagem-chat" placeholder="Faça sua pergunta..." style="flex:1;margin:0">
+                    <button onclick="enviarMensagem()">Enviar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- RANKING -->
+        <div id="aba-ranking" class="aba escondido">
+            <div class="card">
+                <h2>🏆 Ranking — Apenas Usuários Reais</h2>
+                <div id="lista-ranking"></div>
+            </div>
+        </div>
+
+        <!-- POMODORO -->
+        <div id="aba-pomodoro" class="aba escondido">
+            <div class="card" style="text-align:center">
+                <h2>⏱️ Pomodoro</h2>
+                <div style="font-size:4rem;margin:20px 0;font-weight:bold" id="cronometro">25:00</div>
+                <button onclick="iniciarPomodoro()" id="btn-pomodoro">Iniciar</button>
+                <button onclick="pausarPomodoro()">Pausar</button>
+                <button onclick="reiniciarPomodoro()">Reiniciar</button>
+            </div>
+        </div>
+
+        <!-- CONFIGURAÇÕES -->
+        <div id="aba-configuracoes" class="aba escondido">
+            <div class="card">
+                <h2>⚙️ Configurações</h2>
+                <button onclick="exportarDados()">📤 Exportar Backup</button>
+                <button onclick="document.getElementById('importar-arquivo').click()">📥 Importar Backup</button>
+                <input type="file" id="importar-arquivo" accept=".json" style="display:none" onchange="importarDados(event)">
+                <hr style="margin:20px 0;border-color:#334155">
+                <p>WillianEduca © 2026 — Versão Corrigida</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL NOVO CARTÃO -->
+<div id="modal-cartao" class="escondido" style="position:fixed;inset:0;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;z-index:9999">
+    <div class="card" style="width:90%;max-width:500px">
+        <h3>Nova Questão</h3>
+        <label>Matéria:</label>
+        <select id="modal-materia">
+            <option value="Português">Português</option>
+            <option value="Matemática">Matemática</option>
+            <option value="Inglês">Inglês</option>
+            <option value="Espanhol">Espanhol</option>
+            <option value="Física">Física</option>
+            <option value="Química">Química</option>
+            <option value="Biologia">Biologia</option>
+            <option value="História">História</option>
+            <option value="Geografia">Geografia</option>
+            <option value="Filosofia">Filosofia</option>
+            <option value="Sociologia">Sociologia</option>
+            <option value="Artes">Artes</option>
+            <option value="Literatura">Literatura</option>
+            <option value="Redação">Redação</option>
+            <option value="Alemão">Alemão</option>
+            <option value="Francês">Francês</option>
+            <option value="Italiano">Italiano</option>
+            <option value="Japonês">Japonês</option>
+            <option value="Russo">Russo</option>
+            <option value="Chinês">Chinês</option>
+            <option value="Programação">Programação</option>
+            <option value="Lógica">Lógica</option>
+            <option value="Ética">Ética</option>
+            <option value="Outros">Outros</option>
+        </select>
+        <label>Pergunta:</label>
+        <textarea id="modal-pergunta" rows="3" placeholder="Digite sua pergunta..."></textarea>
+        <p style="margin:10px 0;font-weight:bold">Alternativas:</p>
+        <div class="linha-alternativa">
+            <input type="radio" name="correta" value="A" id="rA"><input type="text" id="altA" placeholder="Alternativa A">
+        </div>
+        <div class="linha-alternativa">
+            <input type="radio" name="correta" value="B" id="rB"><input type="text" id="altB" placeholder="Alternativa B">
+        </div>
+        <div class="linha-alternativa">
+            <input type="radio" name="correta" value="C" id="rC"><input type="text" id="altC" placeholder="Alternativa C">
+        </div>
+        <div class="linha-alternativa">
+            <input type="radio" name="correta" value="D" id="rD"><input type="text" id="altD" placeholder="Alternativa D">
+        </div>
+        <div style="display:flex;gap:10px;margin-top:15px">
+            <button onclick="salvarCartao()">💾 Salvar</button>
+            <button onclick="fecharModalCartao()" style="background:transparent;border:2px solid var(--erro)">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// === DADOS GERAIS ===
+let usuarioAtual = null;
+let flashcards = [];
+let ranking = [];
+let chaveAPI = localStorage.getItem('willianeduca_chave') || '';
+let questaoGeradaAtual = null;
+
+// === REVISÃO ===
+let revisaoAtiva = false;
+let indiceAtual = 0;
+let acertos = 0;
+let erros = 0;
+let cartoesRevisao = [];
+let respondeu = false;
+
+// === POMODORO ===
+let tempoPomodoro = 25 * 60;
+let intervaloPomodoro = null;
+let rodandoPomodoro = false;
+
+// === INICIALIZAÇÃO ===
+document.addEventListener('DOMContentLoaded', () => {
+    const salvo = localStorage.getItem('willianeduca_usuario');
+    if(salvo){
+        usuarioAtual = JSON.parse(salvo);
+        carregarTelaPrincipal();
+    }
+    carregarFlashcards();
+    carregarRanking();
+    if(chaveAPI) document.getElementById('chave-gemini').value = chaveAPI;
+});
+
+// === LOGIN ===
+function mostrarCadastro(){
+    document.getElementById('form-login').classList.add('escondido');
+    document.getElementById('form-cadastro').classList.remove('escondido');
+}
+function mostrarLogin(){
+    document.getElementById('form-cadastro').classList.add('escondido');
+    document.getElementById('form-login').classList.remove('escondido');
+}
+function fazerCadastro(){
+    const u = document.getElementById('usuario-cadastro').value.trim();
+    const e = document.getElementById('email-cadastro').value.trim();
+    const s = document.getElementById('senha-cadastro').value;
+    if(!u || !e || !s) return alerta('Preencha todos os campos!', 'erro');
+    const usuarios = JSON.parse(localStorage.getItem('willianeduca_usuarios') || '[]');
+    if(usuarios.find(x=>x.usuario===u)) return alerta('Nome de usuário já existe!', 'erro');
+    const novo = {usuario:u,email:e,senha:s,xp:0,nivel:1,data:new Date().toISOString()};
+    usuarios.push(novo);
+    localStorage.setItem('willianeduca_usuarios', JSON.stringify(usuarios));
+    usuarioAtual = novo;
+    localStorage.setItem('willianeduca_usuario', JSON.stringify(usuarioAtual));
+    carregarTelaPrincipal();
+}
+function fazerLogin(){
+    const u = document.getElementById('usuario-login').value.trim();
+    const s = document.getElementById('senha-login').value;
+    const usuarios = JSON.parse(localStorage.getItem('willianeduca_usuarios') || '[]');
+    const achou = usuarios.find(x=>x.usuario===u && x.senha===s);
+    if(!achou) return alerta('Usuário ou senha incorretos!', 'erro');
+    usuarioAtual = achou;
+    localStorage.setItem('willianeduca_usuario', JSON.stringify(usuarioAtual));
+    carregarTelaPrincipal();
+}
+function sair(){
+    localStorage.removeItem('willianeduca_usuario');
+    usuarioAtual = null;
+    location.reload();
+}
+function carregarTelaPrincipal(){
+    document.getElementById('tela-login').classList.add('escondido');
+    document.getElementById('tela-principal').classList.remove('escondido');
+    atualizarPerfil();
+    atualizarListaFlashcards();
+}
+function atualizarPerfil(){
+    document.getElementById('saudacao').innerHTML = 
+        `${usuarioAtual.usuario} | XP: <span id="xp-usuario">${usuarioAtual.xp}</span> | Nível: <span id="nivel-usuario">${usuarioAtual.nivel}</span>`;
+}
+
+// === ABAS ===
+function mostrarAba(nome){
+    document.querySelectorAll('.aba').forEach(a=>a.classList.add('escondido'));
+    document.getElementById(`aba-${nome}`).classList.remove('escondido');
+    document.querySelectorAll('.navegacao button').forEach(b=>b.classList.remove('ativo'));
+    event.target.classList.add('ativo');
+    if(nome==='ranking') carregarRanking();
+}
+
+// === FLASHCARDS ===
+function carregarFlashcards(){
+    flashcards = JSON.parse(localStorage.getItem('willianeduca_flashcards') || '[]');
+}
+function salvarFlashcards(){
+    localStorage.setItem('willianeduca_flashcards', JSON.stringify(flashcards));
+}
+function abrirModalCartao(){
+    document.getElementById('modal-cartao').classList.remove('escondido');
+}
+function fecharModalCartao(){
+    document.getElementById('modal-cartao').classList.add('escondido');
+    document.getElementById('modal-pergunta').value = '';
+    document.getElementById('altA').value = '';
+    document.getElementById('altB').value = '';
+    document.getElementById('altC').value = '';
+    document.getElementById('altD').value = '';
+    document.querySelectorAll('input[name="correta"]').forEach(r=>r.checked=false);
+}
+function salvarCartao(){
+    const materia = document.getElementById('modal-materia').value;
+    const pergunta = document.getElementById('modal-pergunta').value.trim();
+    const altA = document.getElementById('altA').value.trim();
+    const altB = document.getElementById('altB').value.trim();
+    const altC = document.getElementById('altC').value.trim();
+    const altD = document.getElementById('altD').value.trim();
+    const corretaEl = document.querySelector('input[name="correta"]:checked');
+    
+    if(!pergunta || !altA || !altB || !altC || !altD)
+        return alerta('Preencha todas as alternativas!', 'erro');
+    if(!corretaEl)
+        return alerta('Selecione qual alternativa está correta!', 'erro');
+
+    const novo = {
+        id: Date.now(),
+        materia, pergunta,
+        alternativas: {A:altA, B:altB, C:altC, D:altD},
+        correta: corretaEl.value,
+        proximaRevisao: new Date().toISOString(),
+        intervalo: 1,
+        acertos: 0,
+        erros: 0
+    };
+    flashcards.push(novo);
+    salvarFlashcards();
+    fecharModalCartao();
+    atualizarListaFlashcards();
+    alerta('Questão salva! ✅');
+}
+function atualizarListaFlashcards(){
+    const filtro = document.getElementById('materia-flash').value;
+    const lista = filtro ? flashcards.filter(f=>f.materia===filtro) : flashcards;
+    const div = document.getElementById('lista-flashcards');
+    
+    if(!lista.length){
+        div.innerHTML = '<p style="color:#94a3b8">Nenhuma questão cadastrada ainda.</p>';
+        return;
+    }
+    
+    div.innerHTML = lista.map(f=>`
+        <div class="card" style="margin:10px 0;padding:15px">
+            <strong>${f.materia}</strong>
+            <p style="margin:8px 0">${f.pergunta}</p>
+            <small>A) ${f.alternativas.A}</small><br>
+            <small>B) ${f.alternativas.B}</small><br>
+            <small>C) ${f.alternativas.C}</small><br>
+            <small>D) ${f.alternativas.D}</small><br>
+            <span class="label-correto">Correta: ${f.correta}</span>
+            <div style="margin-top:8px">✅ ${f.acertos} | ❌ ${f.erros}</div>
+            <button onclick="apagarCartao(${f.id})" style="padding:6px 12px;font-size:12px;background:${getComputedStyle(document.body).getPropertyValue('--erro')}">Apagar</button>
+        </div>
+    `).join('');
+}
+function apagarCartao(id){
+    if(confirm('Excluir esta questão?')){
+        flashcards = flashcards.filter(f=>f.id!==id);
+        salvarFlashcards();
+        atualizarListaFlashcards();
+    }
+}
+
+// === REVISÃO ===
+function iniciarRevisao(){
+    const hoje = new Date();
+    cartoesRevisao = flashcards.filter(f=> new Date(f.proximaRevisao) <= hoje);
+    if(!cartoesRevisao.length)
+        return alerta('Nenhuma questão para revisar hoje! 🎉', 'sucesso');
+    
+    revisaoAtiva = true;
+    indiceAtual = 0;
+    acertos = 0;
+    erros = 0;
+    respondeu = false;
+    
+    document.getElementById('area-revisao').classList.remove('escondido');
+    document.getElementById('resumo-revisao').classList.add('escondido');
+    document.getElementById('cont-acertos').textContent = '0';
+    document.getElementById('cont-erros').textContent = '0';
+    
+    mostrarQuestao();
+}
+function mostrarQuestao(){
+    if(indiceAtual >= cartoesRevisao.length){
+        encerrarRevisao();
+        return;
+    }
+    
+    respondeu = false;
+    const f = cartoesRevisao[indiceAtual];
+    document.getElementById('pergunta-revisao').textContent = f.pergunta;
+    document.getElementById('btn-proxima').classList.add('escondido');
+    
+    const divAlts = document.getElementById('alternativas-revisao');
+    divAlts.innerHTML = '';
+    
+    ['A','B','C','D'].forEach(letra=>{
+        const btn = document.createElement('div');
+        btn.className = 'alternativa';
+        btn.innerHTML = `<strong>${letra})</strong> ${f.alternativas[letra]}`;
+        btn.onclick = () => responderQuestao(letra, f);
+        divAlts.appendChild(btn);
+    });
+}
+function responderQuestao(letraEscolhida, cartao){
+    if(respondeu) return;
+    respondeu = true;
+    
+    const correta = cartao.correta;
+    const botoes = document.querySelectorAll('.alternativa');
+    
+    botoes.forEach(b=>{
+        b.style.pointerEvents = 'none';
+        const l = b.querySelector('strong').textContent[0];
+        if(l===correta) b.classList.add('correta');
+        if(l===letraEscolhida && l!==correta) b.classList.add('errada','selecionada');
+    });
+    
+    if(letraEscolhida === correta){
+        acertos++;
+        cartao.acertos++;
+        usuarioAtual.xp += 5;
+        cartao.intervalo *= 2;
+    } else {
+        erros++;
+        cartao.erros++;
+        usuarioAtual.xp += 2;
+        cartao.intervalo = 1;
+    }
+    
+    cartao.proximaRevisao = new Date(Date.now() + cartao.intervalo * 24 * 60 * 60 * 1000).toISOString();
+    
+    // Salvar
+    salvarFlashcards();
+    localStorage.setItem('willianeduca_usuario', JSON.stringify(usuarioAtual));
+    atualizarPerfil();
+    verificarSubirNivel();
+    
+    document.getElementById('cont-acertos').textContent = acertos;
+    document.getElementById('cont-erros').textContent = erros;
+    document.getElementById('btn-proxima').classList.remove('escondido');
+    atualizarRankingUsuario();
+}
+function proximaQuestao(){
+    indiceAtual++;
+    mostrarQuestao();
+}
+function pararRevisao(){
+    revisaoAtiva = false;
+    document.getElementById('area-revisao').classList.add('escondido');
+}
+function encerrarRevisao(){
+    revisaoAtiva = false;
+    document.getElementById('area-revisao').classList.add('escondido');
+    document.getElementById('resumo-revisao').classList.remove('escondido');
+    
+    const total = acertos + erros;
+    const porcent = total ? Math.round((acertos/total)*100) : 0;
+    
+    document.getElementById('r-acertos').textContent = acertos;
+    document.getElementById('r-erros').textContent = erros;
+    document.getElementById('r-porcentagem').textContent = porcent;
+}
+function fecharResumo(){
+    document.getElementById('resumo-revisao').classList.add('escondido');
+}
+function verificarSubirNivel(){
+    const proximo = usuarioAtual.nivel * 100;
+    if(usuarioAtual.xp >= proximo){
+        usuarioAtual.nivel++;
+        localStorage.setItem('willianeduca_usuario', JSON.stringify(usuarioAtual));
+        alerta(`🎉 Parabéns! Você subiu para o Nível ${usuarioAtual.nivel}!`, 'sucesso');
+    }
+}
+
+// === GERADOR DE QUESTÕES ===
+async function gerarQuestao(){
+    const materia = document.getElementById('materia-gerador').value;
+    const tema = document.getElementById('tema-gerador').value.trim();
+    
+    if(!materia || !tema)
+        return alerta('Selecione a matéria e digite o tema!', 'erro');
+    if(!chaveAPI)
+        return alerta('Salve sua chave API na aba Assistente IA primeiro!', 'erro');
+    
+    document.getElementById('btn-gerar').disabled = true;
+    document.getElementById('carregando-gerador').classList.remove('escondido');
+    document.getElementById('resultado-gerador').classList.add('escondido');
+    
+    try{
+        const modelo = 'gemini-1.5-flash'; // ✅ Modelo compatível com chave API
+        const url = `https://generativelanguage.googleapis.com/v1/models/${modelo}:generateContent?key=${chaveAPI}`;
+        
+        const prompt = `Crie uma questão de múltipla escolha sobre ${tema} na matéria ${materia}.
+FORMATO DE RESPOSTA (só JSON, sem comentários):
+{
+  "pergunta": "texto da pergunta",
+  "alternativas": ["texto A", "texto B", "texto C", "texto D"],
+  "correta": "A"
+}
+Regras:
+- 1 correta + 3 distratores plausíveis
+- Resposta APENAS JSON válido`;
+
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({
+                contents: [{parts:[{text:prompt}]}],
+                generationConfig: {temperature:0.7}
+            })
+        });
+
+        if(!res.ok) throw new Error(`Erro API: ${res.status}`);
+        
+        const dados = await res.json();
+        if(dados.error) throw new Error(dados.error.message);
+        
+        let texto = dados.candidates[0].content.parts[0].text;
+        texto = texto.replace(/```json|```/g, '').trim();
+        const q = JSON.parse(texto);
+        
+        questaoGeradaAtual = {
+            materia,
+            pergunta: q.pergunta,
+            alternativas: {A:q.alternativas[0], B:q.alternativas[1], C:q.alternativas[2], D:q.alternativas[3]},
+            correta: q.correta
+        };
+        
+        document.getElementById('q-materia').innerHTML = `<strong>Matéria:</strong> ${materia}`;
+        document.getElementById('q-pergunta').textContent = q.pergunta;
+        
+        const divAlts = document.getElementById('q-alts');
+        divAlts.innerHTML = '';
+        ['A','B','C','D'].forEach(l=>{
+            const d = document.createElement('div');
+            d.className = `alternativa ${l===q.correta?'correta':''}`;
+            d.textContent = `${l}) ${questaoGeradaAtual.alternativas[l]}`;
+            divAlts.appendChild(d);
+        });
+        
+        document.getElementById('resultado-gerador').classList.remove('escondido');
+        alerta('Questão gerada com sucesso! ✅');
+        
+    }catch(erro){
+        console.error(erro);
+        alerta(`Erro: ${erro.message}. Verifique sua chave.`, 'erro');
+    }finally{
+        document.getElementById('btn-gerar').disabled = false;
+        document.getElementById('carregando-gerador').classList.add('escondido');
+    }
+}
+function salvarQuestaoGerada(){
+    if(!questaoGeradaAtual) return;
+    const nova = {
+        id: Date.now(),
+        ...questaoGeradaAtual,
+        proximaRevisao: new Date().toISOString(),
+        intervalo: 1,
+        acertos:0, erros:0
+    };
+    flashcards.push(nova);
+    salvarFlashcards();
+    atualizarListaFlashcards();
+    alerta('Salva nos flashcards! ✅');
+}
+
+// === CHAT GEMINI ===
+function salvarChave(){
+    chaveAPI = document.getElementById('chave-gemini').value.trim();
+    if(!chaveAPI) return alerta('Digite a chave!', 'erro');
+    localStorage.setItem('willianeduca_chave', chaveAPI);
+    alerta('Chave salva! 🔑');
+}
+async function enviarMensagem(){
+    const msg = document.getElementById('mensagem-chat').value.trim();
+    if(!msg || !chaveAPI) return;
+    
+    adicionarMensagem(msg, 'usuario');
+    document.getElementById('mensagem-chat').value = '';
+    
+    try{
+        const modelo = 'gemini-1.5-flash'; // ✅ Modelo compatível
+        const url = `https://generativelanguage.googleapis.com/v1/models/${modelo}:generateContent?key=${chaveAPI}`;
+        
+        const res = await fetch(url, {
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({contents:[{parts:[{text:msg}]}]})
+        });
+        
+        if(!res.ok) throw new Error(`Status ${res.status}`);
+        const dados = await res.json();
+        if(dados.error) throw new Error(dados.error.message);
+        
+        const resp = dados.candidates[0].content.parts[0].text;
+        adicionarMensagem(resp, 'bot');
+        
+    }catch(erro){
+        adicionarMensagem(`❌ Erro: ${erro.message}\n\n💡 Solução: Use chave do **Google AI Studio** e modelo **gemini-1.5-flash**. Não use "2.0 Experimental" — ele não funciona com chaves comuns.`, 'bot');
+    }
+}
+function adicionarMensagem(texto, tipo){
+    const div = document.getElementById('caixa-chat');
+    const m = document.createElement('div');
+    m.className = `chat-mensagem ${tipo}`;
+    m.textContent = texto;
+    div.appendChild(m);
+    div.scrollTop = div.scrollHeight;
+}
+
+// === RANKING ===
+function carregarRanking(){
+    const todos = JSON.parse(localStorage.getItem('willianeduca_usuarios') || '[]');
+    ranking = todos
+        .filter(u=>u.usuario) // Apenas usuários reais
+        .sort((a,b)=>b.xp - a.xp)
+        .slice(0,20);
+    
+    const div = document.getElementById('lista-ranking');
+    if(!ranking.length){
+        div.innerHTML = '<p style="color:#94a3b8">Nenhum usuário cadastrado ainda.</p>';
+        return;
+    }
+    
+    div.innerHTML = ranking.map((u,i)=>{
+        let classe = '';
+        if(i===0) classe='ouro';
+        else if(i===1) classe='prata';
+        else if(i===2) classe='bronze';
+        
+        return `
+        <div class="ranking-item ${classe}">
+            <span><strong>${i+1}º</strong> ${u.usuario}</span>
+            <span>${u.xp} XP · Nível ${u.nivel}</span>
+        </div>`;
+    }).join('');
+}
+function atualizarRankingUsuario(){
+    carregarRanking();
+}
+
+// === POMODORO ===
+function iniciarPomodoro(){
+    if(rodandoPomodoro) return;
+    rodandoPomodoro = true;
+    intervaloPomodoro = setInterval(()=>{
+        tempoPomodoro--;
+        atualizarDisplayPomodoro();
+        if(tempoPomodoro <= 0){
+            clearInterval(intervaloPomodoro);
+            rodandoPomodoro = false;
+            alerta('⏰ Tempo esgotado! Hora de descansar!', 'sucesso');
+        }
+    }, 1000);
+}
+function pausarPomodoro(){
+    clearInterval(intervaloPomodoro);
+    rodandoPomodoro = false;
+}
+function reiniciarPomodoro(){
+    pausarPomodoro();
+    tempoPomodoro = 25 * 60;
+    atualizarDisplayPomodoro();
+}
+function atualizarDisplayPomodoro(){
+    const m = Math.floor(tempoPomodoro/60);
+    const s = tempoPomodoro % 60;
+    document.getElementById('cronometro').textContent = 
+        `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+}
+
+// === BACKUP ===
+function exportarDados(){
+    const dados = {
+        versao: 'WillianEduca-Corrigida',
+        data: new Date().toISOString(),
+        flashcards,
+        usuarios: JSON.parse(localStorage.getItem('willianeduca_usuarios') || '[]')
+    };
+    const blob = new Blob([JSON.stringify(dados,null,2)], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `WillianEduca-Backup-${new Date().toLocaleDateString('pt-BR').replaceAll('/','-')}.json`;
+    a.click();
+}
+function importarDados(e){
+    const arq = e.target.files[0];
+    if(!arq) return;
+    const leitor = new FileReader();
+    leitor.onload = evt => {
+        try{
+            const dados = JSON.parse(evt.target.result);
+            if(dados.flashcards) flashcards = dados.flashcards;
+            if(dados.usuarios) localStorage.setItem('willianeduca_usuarios', JSON.stringify(dados.usuarios));
+            salvarFlashcards();
+            atualizarListaFlashcards();
+            alerta('Dados importados com sucesso! ✅');
+        }catch{
+            alerta('Arquivo inválido!', 'erro');
+        }
+    };
+    leitor.readAsText(arq);
+}
+
+// === UTILITÁRIAS ===
+function alerta(texto, tipo='info'){
+    const cor = tipo==='sucesso' ? 'var(--sucesso)' : tipo==='erro' ? 'var(--erro)' : 'var(--primario)';
+    const d = document.createElement('div');
+    d.className = 'toast';
+    d.style.background = `var(${cor})`;
+    d.textContent = texto;
+    document.body.appendChild(d);
+    setTimeout(()=>d.remove(), 4000);
+}
+</script>
+</body>
+</html>
